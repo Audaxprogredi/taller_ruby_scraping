@@ -1,6 +1,6 @@
 require 'httparty'
 require 'nokogiri'
-require 'csv' # Librería nativa de Ruby necesaria para manejar archivos CSV
+require 'csv' 
 require 'json'
 
 # --- SCRAPER 1: TÍA ---
@@ -51,7 +51,6 @@ if response.success?
   datos = JSON.parse(response.body)
   nombre_archivo = "literatura_menor_40.csv"
   
-  # Nuestro sabueso actualizado con las llaves correctas
   def buscar_productos(nodo, productos_encontrados)
     if nodo.is_a?(Hash)
       # Si el bloque tiene 'seoCurrentPrice' o un bloque 'productoGa' con 'nombre', es un libro
@@ -77,7 +76,6 @@ if response.success?
       libros_procesados = []
 
       productos.each do |libro|
-        # 1. Extraemos el título (priorizamos productoGa, si no, usamos link)
         titulo = "Sin título"
         if libro['productoGa'] && libro['productoGa']['nombre']
           titulo = libro['productoGa']['nombre']
@@ -85,20 +83,16 @@ if response.success?
           titulo = libro['link']['name']
         end
         
-        # Saltamos si ya procesamos este título
         next if libros_procesados.include?(titulo)
         
-        # 2. Extraemos el precio y lo limpiamos (quitamos la "€" y cambiamos coma por punto si la hubiera)
         precio_texto = libro['seoCurrentPrice'] || libro['seoPrice'] || "0"
         precio_numero = precio_texto.gsub(/[^\d,.]/, '').tr(',', '.').to_f
 
-        # 3. Extraemos las opiniones
         total_opiniones = 0
         if libro['reviews'] && libro['reviews'].is_a?(Hash)
           total_opiniones = libro['reviews']['totalReviews'] || 0
         end
 
-        # Filtro final: Menor a 40 Euros y mayor a 0
         if precio_numero > 0 && precio_numero < 40.00
           libros_procesados << titulo
           puts "Guardando: #{titulo} - #{precio_numero}€ (Opiniones: #{total_opiniones})"
@@ -126,7 +120,6 @@ if response.success?
   datos = JSON.parse(response.body)
   nombre_archivo = "comedores_el_bosque_mayor_100.csv"
   
-  # Sabueso 2.0: Capaz de abrir JSONs ocultos (stringificados)
   def buscar_productos(nodo, productos_encontrados)
     # Si el nodo es un texto y parece un JSON (comienza con { o [), lo abrimos
     if nodo.is_a?(String) && (nodo.strip.start_with?('{') || nodo.strip.start_with?('['))
@@ -162,7 +155,6 @@ if response.success?
       productos.each do |mueble|
         titulo = mueble['productName'] || "Sin título"
         
-        # Evitamos guardar muebles duplicados
         next if muebles_procesados.include?(titulo)
         
         precio_numero = 0.0
@@ -172,7 +164,6 @@ if response.success?
           precio_numero = mueble['priceRange']['sellingPrice']['lowPrice'].to_f
         end
 
-        # Filtro matemático: Comedores que cuestan MAS de 100 dólares
         if precio_numero > 100.00
           muebles_procesados << titulo
           puts "Guardando: #{titulo} - $#{precio_numero}"
